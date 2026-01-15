@@ -41,12 +41,12 @@ body {
 .navbar-brand {
     font-weight: 700;
     font-size: 1.25rem;
-    color: var(--primary) !important;
+    color: var(--light) !important;
     letter-spacing: -0.3px;
 }
 
 .navbar-nav .nav-link {
-    color: var(--secondary) !important;
+    color: var(--border) !important;
     font-weight: 500;
     transition: color 0.2s ease;
 }
