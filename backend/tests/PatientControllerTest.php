@@ -2,11 +2,13 @@
 
 namespace Tests;
 
-class PatientControllerTest
+use PHPUnit\Framework\TestCase;
+
+class PatientControllerTest extends TestCase
 {
     private $pdo;
 
-    public function setUp()
+    protected function setUp(): void
     {
         // Configurar conexión de base de datos de prueba
         $this->pdo = new \PDO(
@@ -36,7 +38,10 @@ class PatientControllerTest
         $this->pdo->exec(file_get_contents(__DIR__ . '/../../database/migrations/001_create_initial_tables.sql'));
     }
 
-    public function testValidatorRequired()
+    /**
+     * @test
+     */
+    public function validatorRequired()
     {
         $validator = new \App\Validation\Validator();
         
@@ -46,11 +51,14 @@ class PatientControllerTest
 
         $result = $validator->validate($data, ['nombre' => 'required']);
         
-        assert($result === false, 'El validador debe fallar para campo requerido vacío');
-        assert(count($validator->getErrors()) > 0, 'El validador debe tener errores');
+        $this->assertFalse($result, 'El validador debe fallar para campo requerido vacío');
+        $this->assertNotEmpty($validator->getErrors(), 'El validador debe tener errores');
     }
 
-    public function testValidatorEmail()
+    /**
+     * @test
+     */
+    public function validatorEmail()
     {
         $validator = new \App\Validation\Validator();
         
@@ -60,10 +68,13 @@ class PatientControllerTest
 
         $result = $validator->validate($data, ['correo' => 'email']);
         
-        assert($result === false, 'El validador debe fallar para correo inválido');
+        $this->assertFalse($result, 'El validador debe fallar para correo inválido');
     }
 
-    public function testValidatorValidEmail()
+    /**
+     * @test
+     */
+    public function validatorValidEmail()
     {
         $validator = new \App\Validation\Validator();
         
@@ -73,57 +84,72 @@ class PatientControllerTest
 
         $result = $validator->validate($data, ['correo' => 'email']);
         
-        assert($result === true, 'El validador debe pasar para correo válido');
+        $this->assertTrue($result, 'El validador debe pasar para correo válido');
     }
 
-    public function testValidatorDocument()
+    /**
+     * @test
+     */
+    public function validatorDocument()
     {
         $validator = new \App\Validation\Validator();
         
         // Documento inválido (muy corto)
         $data = ['documento' => '123'];
         $result = $validator->validate($data, ['documento' => 'documento']);
-        assert($result === false, 'El validador debe fallar para formato de documento inválido');
+        $this->assertFalse($result, 'El validador debe fallar para formato de documento inválido');
 
         // Documento válido
         $data = ['documento' => '12345678'];
         $result = $validator->validate($data, ['documento' => 'documento']);
-        assert($result === true, 'El validador debe pasar para documento válido');
+        $this->assertTrue($result, 'El validador debe pasar para documento válido');
     }
 
-    public function testValidatorPhone()
+    /**
+     * @test
+     */
+    public function validatorPhone()
     {
         $validator = new \App\Validation\Validator();
         
         // Teléfono inválido (longitud incorrecta)
         $data = ['telefono' => '123456'];
         $result = $validator->validate($data, ['telefono' => 'phone']);
-        assert($result === false, 'El validador debe fallar para formato de teléfono inválido');
+        $this->assertFalse($result, 'El validador debe fallar para formato de teléfono inválido');
 
         // Teléfono válido
         $data = ['telefono' => '3001234567'];
         $result = $validator->validate($data, ['telefono' => 'phone']);
-        assert($result === true, 'El validador debe pasar para teléfono válido');
+        $this->assertTrue($result, 'El validador debe pasar para teléfono válido');
     }
 
-    public function testSanitizerString()
+    /**
+     * @test
+     */
+    public function sanitizerString()
     {
         $input = '<script>alert("XSS")</script>';
         $sanitized = \App\Validation\Sanitizer::sanitizeString($input);
         
-        assert(strpos($sanitized, '<script>') === false, 'El desinfectante debe eliminar etiquetas de script');
-        assert(strpos($sanitized, '&lt;script&gt;') !== false, 'El desinfectante debe codificar entidades HTML');
+        $this->assertStringNotContainsString('<script>', $sanitized, 'El desinfectante debe eliminar etiquetas de script');
+        $this->assertStringContainsString('&lt;script&gt;', $sanitized, 'El desinfectante debe codificar entidades HTML');
     }
 
-    public function testSanitizerEmail()
+    /**
+     * @test
+     */
+    public function sanitizerEmail()
     {
         $input = 'test@example.com';
         $sanitized = \App\Validation\Sanitizer::sanitizeEmail($input);
         
-        assert($sanitized === 'test@example.com', 'El desinfectante debe preservar correo válido');
+        $this->assertEquals('test@example.com', $sanitized, 'El desinfectante debe preservar correo válido');
     }
 
-    public function testJwtHandler()
+    /**
+     * @test
+     */
+    public function jwtHandler()
     {
         $jwt = new \App\Utils\JwtHandler();
         
@@ -134,16 +160,19 @@ class PatientControllerTest
 
         // Generar token
         $token = $jwt->generateToken($data);
-        assert(!empty($token), 'El manejador JWT debe generar token');
+        $this->assertNotEmpty($token, 'El manejador JWT debe generar token');
 
         // Verificar token
         $payload = $jwt->verifyToken($token);
-        assert($payload !== false, 'El manejador JWT debe verificar token válido');
-        assert($payload['id'] === 1, 'La carga JWT debe contener ID de usuario');
-        assert($payload['username'] === 'admin', 'La carga JWT debe contener nombre de usuario');
+        $this->assertNotFalse($payload, 'El manejador JWT debe verificar token válido');
+        $this->assertEquals(1, $payload['id'], 'La carga JWT debe contener ID de usuario');
+        $this->assertEquals('admin', $payload['username'], 'La carga JWT debe contener nombre de usuario');
     }
 
-    public function testJwtHandlerExpiredToken()
+    /**
+     * @test
+     */
+    public function jwtHandlerExpiredToken()
     {
         $jwt = new \App\Utils\JwtHandler();
         
@@ -152,74 +181,6 @@ class PatientControllerTest
         $invalidToken = 'invalid.token.here';
         $payload = $jwt->verifyToken($invalidToken);
         
-        assert($payload === false, 'El manejador JWT debe rechazar token inválido');
-    }
-
-    public function runAllTests()
-    {
-        echo "Ejecutando Pruebas de Validador...\n";
-        
-        try {
-            $this->testValidatorRequired();
-            echo "✓ testValidatorRequired passed\n";
-        } catch (\AssertionError $e) {
-            echo "✗ testValidatorRequired failed: " . $e->getMessage() . "\n";
-        }
-
-        try {
-            $this->testValidatorEmail();
-            echo "✓ testValidatorEmail passed\n";
-        } catch (\AssertionError $e) {
-            echo "✗ testValidatorEmail failed: " . $e->getMessage() . "\n";
-        }
-
-        try {
-            $this->testValidatorValidEmail();
-            echo "✓ testValidatorValidEmail passed\n";
-        } catch (\AssertionError $e) {
-            echo "✗ testValidatorValidEmail failed: " . $e->getMessage() . "\n";
-        }
-
-        try {
-            $this->testValidatorDocument();
-            echo "✓ testValidatorDocument passed\n";
-        } catch (\AssertionError $e) {
-            echo "✗ testValidatorDocument failed: " . $e->getMessage() . "\n";
-        }
-
-        try {
-            $this->testValidatorPhone();
-            echo "✓ testValidatorPhone passed\n";
-        } catch (\AssertionError $e) {
-            echo "✗ testValidatorPhone failed: " . $e->getMessage() . "\n";
-        }
-
-        try {
-            $this->testSanitizerString();
-            echo "✓ testSanitizerString passed\n";
-        } catch (\AssertionError $e) {
-            echo "✗ testSanitizerString failed: " . $e->getMessage() . "\n";
-        }
-
-        try {
-            $this->testSanitizerEmail();
-            echo "✓ testSanitizerEmail passed\n";
-        } catch (\AssertionError $e) {
-            echo "✗ testSanitizerEmail failed: " . $e->getMessage() . "\n";
-        }
-
-        try {
-            $this->testJwtHandler();
-            echo "✓ testJwtHandler passed\n";
-        } catch (\AssertionError $e) {
-            echo "✗ testJwtHandler failed: " . $e->getMessage() . "\n";
-        }
-
-        try {
-            $this->testJwtHandlerExpiredToken();
-            echo "✓ testJwtHandlerExpiredToken passed\n";
-        } catch (\AssertionError $e) {
-            echo "✗ testJwtHandlerExpiredToken failed: " . $e->getMessage() . "\n";
-        }
+        $this->assertFalse($payload, 'El manejador JWT debe rechazar token inválido');
     }
 }
