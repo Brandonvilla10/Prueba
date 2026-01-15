@@ -19,6 +19,16 @@ mysql -u root hospital_db < backend/database/migrations/001_create_initial_table
 3. Importar datos de prueba
 mysql -u root hospital_db < backend/database/seeders/seed_data.sql
 
+o
+
+Ingresar a la interfaz grafica y colocar CREATE DATABASE hospital_db CHARACTER SET utf8mb4;
+
+Luegon ingresar a la base de datos y colocar las sentencias sql de las tablas y los seeders que estan en estas rutas
+
+- backend/database/migrations/001_create_initial_tables.sql
+
+- backend/database/seeders/seed_data.sql
+
 4. Configurar base de datos
 Editar: backend/src/config/Database.php
 - host = localhost
@@ -65,6 +75,5 @@ Base de datos:
 
 ## Documentación
 
-SETUP.md: Instalación paso a paso
-DOCUMENTATION.md: Referencia técnica completa
-QUICK_REFERENCE.md: Comandos y soluciones rápidas
+INSTALACION.md: Instalación paso a paso
+Referencia_Rapida.md: Comandos y soluciones rápidas
